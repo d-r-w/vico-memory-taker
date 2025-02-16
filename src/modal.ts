@@ -5,22 +5,32 @@ interface AddMemoryResponse {
   error?: string;
 }
 
-interface AddMemoryMessage {
-  type: "ADD_MEMORY";
+interface Message {
+  type: MessageType;
+}
+
+enum MessageType {
+  ADD_MEMORY = "ADD_MEMORY",
+  SHOW_MODAL = "SHOW_MODAL",
+  CROP_SCREENSHOT = "CROP_SCREENSHOT"
+}
+
+interface AddMemoryMessage extends Message {
+  type: MessageType.ADD_MEMORY;
   data: {
     memory: string | null;
     media: string | null;
   };
 }
 
-interface ShowModalRequest {
-  type: "SHOW_MODAL";
+interface ShowModalMessage extends Message {
+  type: MessageType.SHOW_MODAL;
   data: string;
   memoryType: MemoryType;
 }
 
-interface CropScreenshotMessage {
-  type: "CROP_SCREENSHOT";
+interface CropScreenshotMessage extends Message {
+  type: MessageType.CROP_SCREENSHOT;
   dataUrl: string;
   rect: {
     left: number;
@@ -156,7 +166,10 @@ function showMemoryModal(content: string, type: MemoryType): HTMLDivElement {
       type === "image" ? null : (contentElement as HTMLTextAreaElement).value;
     const media: string | null = type === "image" ? content : null;
     chrome.runtime.sendMessage(
-      { type: "ADD_MEMORY", data: { memory, media } } as AddMemoryMessage,
+      {
+        type: MessageType.ADD_MEMORY,
+        data: { memory, media }
+      } as AddMemoryMessage,
       (response: AddMemoryResponse | undefined) => {
         if (response?.success) {
           overlay.remove();
@@ -180,54 +193,60 @@ function showMemoryModal(content: string, type: MemoryType): HTMLDivElement {
 
 chrome.runtime.onMessage.addListener(
   (
-    request: ShowModalRequest | CropScreenshotMessage,
+    message: Message,
     sender: chrome.runtime.MessageSender,
     sendResponse: (response: { success: boolean; error?: string }) => void
   ): boolean | undefined => {
-    if (request.type === "SHOW_MODAL") {
-      showMemoryModal(request.data, request.memoryType);
-      sendResponse({ success: true });
-    } else if (request.type === "CROP_SCREENSHOT") {
-      const { dataUrl, rect } = request;
-      const img = new Image();
-      img.onload = () => {
-        const canvas: HTMLCanvasElement = document.createElement("canvas");
-        const scale: number = window.devicePixelRatio;
-        canvas.width = rect.width * scale;
-        canvas.height = rect.height * scale;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          sendResponse({
-            success: false,
-            error: "Unable to get canvas context"
-          });
-          return;
-        }
-        ctx.drawImage(
-          img,
-          rect.left * scale,
-          rect.top * scale,
-          rect.width * scale,
-          rect.height * scale,
-          0,
-          0,
-          rect.width * scale,
-          rect.height * scale
-        );
-
-        const croppedDataUrl: string = canvas.toDataURL("image/png");
-        showMemoryModal(croppedDataUrl, "image");
+    switch (message.type) {
+      case MessageType.SHOW_MODAL: {
+        const showModalMessage = message as ShowModalMessage;
+        showMemoryModal(showModalMessage.data, showModalMessage.memoryType);
         sendResponse({ success: true });
-      };
+        return true;
+      }
+      case MessageType.CROP_SCREENSHOT: {
+        const cropScreenshotMessage = message as CropScreenshotMessage;
+        const { dataUrl, rect } = cropScreenshotMessage;
+        const img = new Image();
+        img.onload = () => {
+          const canvas: HTMLCanvasElement = document.createElement("canvas");
+          const scale: number = window.devicePixelRatio;
+          canvas.width = rect.width * scale;
+          canvas.height = rect.height * scale;
 
-      img.addEventListener("error", (event: Event) => {
-        console.error("Error loading image:", event);
-        sendResponse({ success: false, error: "Image load error" });
-      });
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            sendResponse({
+              success: false,
+              error: "Unable to get canvas context"
+            });
+            return;
+          }
+          ctx.drawImage(
+            img,
+            rect.left * scale,
+            rect.top * scale,
+            rect.width * scale,
+            rect.height * scale,
+            0,
+            0,
+            rect.width * scale,
+            rect.height * scale
+          );
 
-      img.src = dataUrl;
-      return true;
+          const croppedDataUrl: string = canvas.toDataURL("image/png");
+          showMemoryModal(croppedDataUrl, "image");
+          sendResponse({ success: true });
+        };
+
+        img.addEventListener("error", (event: Event) => {
+          console.error("Error loading image:", event);
+          sendResponse({ success: false, error: "Image load error" });
+        });
+
+        img.src = dataUrl;
+        return true;
+      }
     }
   }
 );

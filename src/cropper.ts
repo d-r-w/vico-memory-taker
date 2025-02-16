@@ -80,6 +80,7 @@ function initCropper(): void {
 
     overlay.remove();
 
+    // Calling setTimeout to allow for overlay removal to be rendered
     setTimeout((): void => {
       const message: CropCoordsMessage = {
         type: "CROP_COORDS",
