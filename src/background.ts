@@ -14,19 +14,19 @@ interface Memory {
 const takeTextMemory: chrome.contextMenus.CreateProperties = {
   id: "takeTextMemory",
   title: "Text",
-  contexts: ["selection"]
+  contexts: ["all"]
 };
 
 const takeScreenshotMemory: chrome.contextMenus.CreateProperties = {
   id: "takeScreenshotMemory",
   title: "Screenshot",
-  contexts: ["page", "selection"]
+  contexts: ["all"]
 };
 
 const takeCroppedScreenshotMemory: chrome.contextMenus.CreateProperties = {
   id: "takeCroppedScreenshotMemory",
   title: "Cropped Screenshot",
-  contexts: ["page", "selection"]
+  contexts: ["all"]
 };
 
 chrome.runtime.onInstalled.addListener((): void => {
@@ -68,14 +68,10 @@ chrome.contextMenus.onClicked.addListener(
         break;
       case takeTextMemory.id:
         {
-          if (!info.selectionText) {
-            return;
-          }
-
           const message: ShowModalMessage = {
             type: MessageType.SHOW_MODAL,
             memoryType: "text",
-            data: info.selectionText
+            data: info.selectionText ?? ""
           };
           chrome.tabs.sendMessage(tab.id, message);
         }
