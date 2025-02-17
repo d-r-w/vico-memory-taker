@@ -10,10 +10,10 @@ import type {
 import { MessageType } from "./types/messages";
 
 function injectModalStyles(): void {
-  if (document.getElementById("prysm-styles")) return;
+  if (document.getElementById("memory-taker-styles")) return;
 
   const link: HTMLLinkElement = document.createElement("link");
-  link.id = "prysm-styles";
+  link.id = "memory-taker-styles";
   link.rel = "stylesheet";
   link.href = chrome.runtime.getURL("modal.css");
 
@@ -24,10 +24,10 @@ function showMemoryModal(content: string, type: MemoryType): HTMLDivElement {
   injectModalStyles();
 
   const overlay: HTMLDivElement = document.createElement("div");
-  overlay.className = "prysm-overlay";
+  overlay.className = "memory-taker-overlay";
 
   const modal: HTMLDivElement = document.createElement("div");
-  modal.className = "prysm-modal";
+  modal.className = "memory-taker-modal";
 
   let contentElement: HTMLImageElement | HTMLTextAreaElement;
   if (type === "image") {
@@ -39,22 +39,22 @@ function showMemoryModal(content: string, type: MemoryType): HTMLDivElement {
     contentElement.style.marginBottom = "15px";
   } else {
     contentElement = document.createElement("textarea");
-    contentElement.className = "prysm-textarea";
+    contentElement.className = "memory-taker-textarea";
     contentElement.value = content;
     setTimeout(() => contentElement.focus(), 0);
   }
   modal.appendChild(contentElement);
 
   const buttonsDiv: HTMLDivElement = document.createElement("div");
-  buttonsDiv.className = "prysm-buttons";
+  buttonsDiv.className = "memory-taker-buttons";
 
   const saveButton: HTMLButtonElement = document.createElement("button");
-  saveButton.className = "prysm-button save";
+  saveButton.className = "memory-taker-button save";
   saveButton.textContent = "Save Memory";
   buttonsDiv.appendChild(saveButton);
 
   const cancelButton: HTMLButtonElement = document.createElement("button");
-  cancelButton.className = "prysm-button cancel";
+  cancelButton.className = "memory-taker-button cancel";
   cancelButton.textContent = "Cancel";
   buttonsDiv.appendChild(cancelButton);
 
