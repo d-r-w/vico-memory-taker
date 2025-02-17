@@ -1,44 +1,13 @@
-type MemoryType = "image" | "text";
+import type {
+  MemoryType,
+  AddMemoryResponse,
+  Message,
+  AddMemoryMessage,
+  ShowModalMessage,
+  CropScreenshotMessage
+} from "./types/messages";
 
-interface AddMemoryResponse {
-  success: boolean;
-  error?: string;
-}
-
-interface Message {
-  type: MessageType;
-}
-
-enum MessageType {
-  ADD_MEMORY = "ADD_MEMORY",
-  SHOW_MODAL = "SHOW_MODAL",
-  CROP_SCREENSHOT = "CROP_SCREENSHOT"
-}
-
-interface AddMemoryMessage extends Message {
-  type: MessageType.ADD_MEMORY;
-  data: {
-    memory: string | null;
-    media: string | null;
-  };
-}
-
-interface ShowModalMessage extends Message {
-  type: MessageType.SHOW_MODAL;
-  data: string;
-  memoryType: MemoryType;
-}
-
-interface CropScreenshotMessage extends Message {
-  type: MessageType.CROP_SCREENSHOT;
-  dataUrl: string;
-  rect: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  };
-}
+import { MessageType } from "./types/messages";
 
 function injectModalStyles(): void {
   if (document.getElementById("prysm-styles")) return;

@@ -1,100 +1,97 @@
+import { MessageType } from "./types/messages";
+import type {
+  ShowModalMessage,
+  CropScreenshotMessage,
+  Message,
+  CropCoordsMessage,
+  AddMemoryMessage
+} from "./types/messages";
+
 interface Memory {
   [key: string]: unknown;
 }
 
-interface CropCoordsMessage {
-  type: "CROP_COORDS";
-  rect: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-}
+const takeTextMemory: chrome.contextMenus.CreateProperties = {
+  id: "takeTextMemory",
+  title: "Text",
+  contexts: ["selection"]
+};
 
-interface AddMemoryMessage {
-  type: "ADD_MEMORY";
-  data: Memory;
-}
+const takeScreenshotMemory: chrome.contextMenus.CreateProperties = {
+  id: "takeScreenshotMemory",
+  title: "Screenshot",
+  contexts: ["page", "selection"]
+};
 
-type BackgroundMessage = CropCoordsMessage | AddMemoryMessage;
-
-interface ShowModalMessage {
-  type: "SHOW_MODAL";
-  memoryType: "image" | "text";
-  data: string;
-}
-
-interface CropScreenshotMessage {
-  type: "CROP_SCREENSHOT";
-  dataUrl: string;
-  rect: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-}
+const takeCroppedScreenshotMemory: chrome.contextMenus.CreateProperties = {
+  id: "takeCroppedScreenshotMemory",
+  title: "Cropped Screenshot",
+  contexts: ["page", "selection"]
+};
 
 chrome.runtime.onInstalled.addListener((): void => {
-  chrome.contextMenus.create({
-    id: "prysmAddMemory",
-    title: "Prysm Memory: Text",
-    contexts: ["selection"]
-  });
-  chrome.contextMenus.create({
-    id: "prysmCaptureScreenshot",
-    title: "Prysm Memory: Screenshot",
-    contexts: ["page", "selection"]
-  });
-  chrome.contextMenus.create({
-    id: "prysmCaptureScreenshotCropped",
-    title: "Prysm Memory: Cropped Screenshot",
-    contexts: ["page", "selection"]
-  });
+  chrome.contextMenus.create(takeTextMemory);
+  chrome.contextMenus.create(takeScreenshotMemory);
+  chrome.contextMenus.create(takeCroppedScreenshotMemory);
 });
 
 chrome.contextMenus.onClicked.addListener(
   (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab): void => {
     if (!tab?.id) return;
-
-    if (info.menuItemId === "prysmCaptureScreenshot") {
-      chrome.tabs.captureVisibleTab(
-        tab.windowId,
-        { format: "png" },
-        (dataUrl?: string) => {
-          if (chrome.runtime.lastError) {
-            console.error(chrome.runtime.lastError.message);
+    switch (info.menuItemId) {
+      case takeScreenshotMemory.id:
+        {
+          chrome.tabs.captureVisibleTab(
+            tab.windowId,
+            { format: "png" },
+            (dataUrl?: string) => {
+              if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError.message);
+                return;
+              }
+              const message: ShowModalMessage = {
+                type: MessageType.SHOW_MODAL,
+                memoryType: "image",
+                data: dataUrl || ""
+              };
+              chrome.tabs.sendMessage(tab.id ?? -1, message);
+            }
+          );
+        }
+        break;
+      case takeCroppedScreenshotMemory.id:
+        {
+          chrome.tabs.sendMessage(tab.id, {
+            type: MessageType.CAPTURE_CROPPED
+          });
+        }
+        break;
+      case takeTextMemory.id:
+        {
+          if (!info.selectionText) {
             return;
           }
+
           const message: ShowModalMessage = {
-            type: "SHOW_MODAL",
-            memoryType: "image",
-            data: dataUrl || ""
+            type: MessageType.SHOW_MODAL,
+            memoryType: "text",
+            data: info.selectionText
           };
-          chrome.tabs.sendMessage(tab.id ?? -1, message);
+          chrome.tabs.sendMessage(tab.id, message);
         }
-      );
-    } else if (info.menuItemId === "prysmCaptureScreenshotCropped") {
-      chrome.tabs.sendMessage(tab.id, { type: "CAPTURE_CROPPED" });
-    } else if (info.menuItemId === "prysmAddMemory" && info.selectionText) {
-      const message: ShowModalMessage = {
-        type: "SHOW_MODAL",
-        memoryType: "text",
-        data: info.selectionText
-      };
-      chrome.tabs.sendMessage(tab.id, message);
+        break;
     }
   }
 );
 
 chrome.runtime.onMessage.addListener(
   (
-    message: BackgroundMessage,
+    message: Message,
     sender: chrome.runtime.MessageSender,
     sendResponse: (response: { success: boolean; error?: string }) => void
   ): boolean | undefined => {
-    if (message.type === "CROP_COORDS") {
+    if (message.type === MessageType.CROP_COORDS) {
+      const cropCoordsMessage = message as CropCoordsMessage;
       if (!sender.tab || !sender.tab.windowId) return;
       chrome.tabs.captureVisibleTab(
         sender.tab.windowId,
@@ -105,9 +102,9 @@ chrome.runtime.onMessage.addListener(
             return;
           }
           const cropMsg: CropScreenshotMessage = {
-            type: "CROP_SCREENSHOT",
+            type: MessageType.CROP_SCREENSHOT,
             dataUrl: dataUrl || "",
-            rect: message.rect
+            rect: cropCoordsMessage.rect
           };
           if (sender.tab?.id !== undefined) {
             chrome.tabs.sendMessage(sender.tab.id, cropMsg);
@@ -115,20 +112,21 @@ chrome.runtime.onMessage.addListener(
           sendResponse({ success: true });
         }
       );
-    } else if (message.type === "ADD_MEMORY") {
-      sendToPrysm(message.data)
+    } else if (message.type === MessageType.ADD_MEMORY) {
+      const addMemoryMessage = message as AddMemoryMessage;
+      sendToEndpoint(addMemoryMessage.data)
         .then((result) => {
           sendResponse(result);
         })
         .catch((error: Error) => {
           sendResponse({ success: false, error: error.toString() });
         });
-      return true; // Indicates asynchronous response
+      return true;
     }
   }
 );
 
-async function sendToPrysm(
+async function sendToEndpoint(
   memory: Memory
 ): Promise<{ success: boolean; error?: string }> {
   const apiUrl = "http://localhost:3000/api/memories";

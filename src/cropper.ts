@@ -1,18 +1,8 @@
-interface CropCoords {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
-
-interface CropCoordsMessage {
-  type: "CROP_COORDS";
-  rect: CropCoords;
-}
-
-interface CaptureCroppedMessage {
-  type: "CAPTURE_CROPPED";
-}
+import {
+  MessageType,
+  type CropCoordsMessage,
+  type CaptureCroppedMessage
+} from "./types/messages";
 
 function initCropper(): void {
   const overlay: HTMLDivElement = document.createElement("div");
@@ -25,7 +15,7 @@ function initCropper(): void {
     height: "100vh",
     background: "rgba(0, 0, 0, 0.3)",
     zIndex: "9999",
-    cursor: "crosshair"
+    cursor: "crosshair !important"
   });
   document.body.appendChild(overlay);
 
@@ -83,7 +73,7 @@ function initCropper(): void {
     // Calling setTimeout to allow for overlay removal to be rendered
     setTimeout((): void => {
       const message: CropCoordsMessage = {
-        type: "CROP_COORDS",
+        type: MessageType.CROP_COORDS,
         rect: { left, top, width, height }
       };
       chrome.runtime.sendMessage(message);
@@ -99,7 +89,7 @@ chrome.runtime.onMessage.addListener(
     sender: chrome.runtime.MessageSender,
     sendResponse: (response: { success: boolean }) => void
   ): void => {
-    if (message.type === "CAPTURE_CROPPED") {
+    if (message.type === MessageType.CAPTURE_CROPPED) {
       initCropper();
       sendResponse({ success: true });
     }
