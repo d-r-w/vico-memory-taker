@@ -42,79 +42,13 @@ interface CropScreenshotMessage extends Message {
 
 function injectModalStyles(): void {
   if (document.getElementById("prysm-styles")) return;
-  const style: HTMLStyleElement = document.createElement("style");
-  style.id = "prysm-styles";
-  style.textContent = `
-    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap');
-    .prysm-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-    }
-    .prysm-modal {
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      animation: prysmFadeIn 0.3s ease-out;
-      font-family: 'Roboto Mono', monospace;
-    }
-    .prysm-textarea {
-      width: 100%;
-      height: 300px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      resize: vertical;
-      margin-bottom: 15px;
-      font-size: 1em;
-      box-sizing: border-box;
-      color: black;
-      font-family: inherit;
-      background-color: rgb(215, 228, 240);
-    }
-    .prysm-buttons {
-      text-align: right;
-    }
-    .prysm-button {
-      padding: 10px 15px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1em;
-      transition: background-color 0.2s ease;
-      margin-left: 10px;
-      font-family: inherit;
-    }
-    .prysm-button.save {
-      background-color: #4CAF50;
-      color: #fff;
-    }
-    .prysm-button.save:hover {
-      background-color: #45A049;
-    }
-    .prysm-button.cancel {
-      background-color: #f44336;
-      color: #fff;
-    }
-    .prysm-button.cancel:hover {
-      background-color: #e53935;
-    }
-    @keyframes prysmFadeIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
-    }
-  `;
-  document.head.appendChild(style);
+
+  const link: HTMLLinkElement = document.createElement("link");
+  link.id = "prysm-styles";
+  link.rel = "stylesheet";
+  link.href = chrome.runtime.getURL("modal.css");
+
+  document.head.appendChild(link);
 }
 
 function showMemoryModal(content: string, type: MemoryType): HTMLDivElement {
