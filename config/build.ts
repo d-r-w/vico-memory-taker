@@ -39,7 +39,7 @@ for await (const filename of glob.scan(publicFolder)) {
 
   if (!file.exists()) throw new Error(`File ${filename} does not exist`);
 
-  if (filename.endsWith(ext.png) || filename.endsWith(ext.css)) continue;
+  if (filename.endsWith(ext.png)) continue;
 
   if (filename.endsWith(ext.html)) {
     const fileFolder = filename.replace(ext.html, "");
