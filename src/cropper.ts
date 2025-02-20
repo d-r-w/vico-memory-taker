@@ -77,7 +77,7 @@ function initCropper(): void {
         rect: { left, top, width, height }
       };
       chrome.runtime.sendMessage(message);
-    }, 0);
+    }, 750);
   }
 
   overlay.addEventListener("mousedown", mouseDownHandler);

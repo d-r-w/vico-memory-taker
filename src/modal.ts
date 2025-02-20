@@ -67,11 +67,11 @@ function showMemoryModal(content: string, type: MemoryType): HTMLDivElement {
   saveButton.addEventListener("click", () => {
     const memory: string | null =
       type === "image" ? null : (contentElement as HTMLTextAreaElement).value;
-    const media: string | null = type === "image" ? content : null;
+    const image: string | null = type === "image" ? content : null;
     chrome.runtime.sendMessage(
       {
         type: MessageType.ADD_MEMORY,
-        data: { memory, media }
+        data: { memory, image: image }
       } as AddMemoryMessage,
       (response: AddMemoryResponse | undefined) => {
         if (response?.success) {

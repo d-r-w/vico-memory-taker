@@ -125,7 +125,7 @@ chrome.runtime.onMessage.addListener(
 async function sendToEndpoint(
   memory: Memory
 ): Promise<{ success: boolean; error?: string }> {
-  const apiUrl = "http://localhost:3000/api/memories";
+  const apiUrl = "http://localhost:3020/api/save_memory/";
   try {
     const response = await fetch(apiUrl, {
       method: "POST",

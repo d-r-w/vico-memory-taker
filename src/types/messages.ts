@@ -21,7 +21,7 @@ export interface AddMemoryMessage extends Message {
   type: MessageType.ADD_MEMORY;
   data: {
     memory: string | null;
-    media: string | null;
+    image: string | null;
   };
 }
 
