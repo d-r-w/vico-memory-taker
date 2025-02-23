@@ -30,6 +30,8 @@ function showMemoryModal(content: string, type: MemoryType): HTMLDivElement {
   modal.className = "memory-taker-modal";
 
   let contentElement: HTMLImageElement | HTMLTextAreaElement;
+  let contextTextArea: HTMLTextAreaElement | null = null;
+  
   if (type === "image") {
     contentElement = document.createElement("img");
     contentElement.src = content;
@@ -37,13 +39,24 @@ function showMemoryModal(content: string, type: MemoryType): HTMLDivElement {
     contentElement.style.maxWidth = "100%";
     contentElement.style.maxHeight = "300px";
     contentElement.style.marginBottom = "15px";
+    
+    contextTextArea = document.createElement("textarea");
+    contextTextArea.className = "memory-taker-textarea";
+    contextTextArea.placeholder = "Optional context for memory...";
+    contextTextArea.style.height = "100px";
+    setTimeout(() => contentElement.focus(), 0);
   } else {
     contentElement = document.createElement("textarea");
     contentElement.className = "memory-taker-textarea";
     contentElement.value = content;
     setTimeout(() => contentElement.focus(), 0);
   }
+  
   modal.appendChild(contentElement);
+
+  if (contextTextArea) {
+    modal.appendChild(contextTextArea);
+  }
 
   const buttonsDiv: HTMLDivElement = document.createElement("div");
   buttonsDiv.className = "memory-taker-buttons";
@@ -65,13 +78,20 @@ function showMemoryModal(content: string, type: MemoryType): HTMLDivElement {
   cancelButton.addEventListener("click", () => overlay.remove());
 
   saveButton.addEventListener("click", () => {
-    const memory: string | null =
-      type === "image" ? null : (contentElement as HTMLTextAreaElement).value;
-    const image: string | null = type === "image" ? content : null;
+    let text: string | null;
+    let image: string | null = null;
+
+    if (type === "image") {
+      text = contextTextArea?.value || null;
+      image = content;
+    } else {
+      text = (contentElement as HTMLTextAreaElement).value;
+    }
+    
     chrome.runtime.sendMessage(
       {
         type: MessageType.ADD_MEMORY,
-        data: { memory, image: image }
+        data: { text, image }
       } as AddMemoryMessage,
       (response: AddMemoryResponse | undefined) => {
         if (response?.success) {
