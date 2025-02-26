@@ -130,7 +130,10 @@ async function sendToEndpoint(
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(memory)
+      body: JSON.stringify({
+        memory_text: memory.text,
+        memory_image_base64: memory.image,
+      })
     });
     if (!response.ok) {
       throw new Error("Response not ok");
